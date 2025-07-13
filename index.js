@@ -17,7 +17,7 @@ app.use(cors());
 app.use(express.json());
 
 // MongoDB
-mongoose.connect("mongodb+srv://creator:APAgroup.pro193@cluster0.o1azkwr.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0&appName=APAMessenger&tls=true", {
+mongoose.connect("mongodb+srv://creator:APAgroup.pro193@cluster0.o1azkwr.mongodb.net/?retryWrites=true&w=majority&appName=APAMessenger&tls=true", {
     useNewUrlParser: true,
     useUnifiedTopology: true
 }).then(() => console.log("MongoDB connected"))
