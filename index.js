@@ -1,4 +1,3 @@
-
 const express = require("express");
 const http = require("http");
 const cors = require("cors");
@@ -16,8 +15,8 @@ const io = socketIO(server, {
 app.use(cors());
 app.use(express.json());
 
-// MongoDB
-mongoose.connect("mongodb+srv://creator:APAgroup.pro193@cluster0.o1azkwr.mongodb.net/?retryWrites=true&w=majority&appName=APAMessenger&tls=true", {
+// MongoDB (исправлено: удалён параметр appName из URI)
+mongoose.connect("mongodb+srv://creator:APAgroup.pro193@cluster0.o1azkwr.mongodb.net/?retryWrites=true&w=majority&tls=true", {
     useNewUrlParser: true,
     useUnifiedTopology: true
 }).then(() => console.log("MongoDB connected"))
