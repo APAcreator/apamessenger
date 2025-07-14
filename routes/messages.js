@@ -1,19 +1,13 @@
-
-const express = require("express");
-const Message = require("../models/Message");
-
+const express = require('express');
 const router = express.Router();
+const Message = require('../models/Message');
 
-router.get("/:from/:to", async (req, res) => {
-    const { from, to } = req.params;
-    const messages = await Message.find({
-        $or: [
-            { from, to },
-            { from: to, to: from }
-        ]
-    }).sort({ createdAt: 1 });
-
-    res.json(messages);
+// отправить сообщение
+router.post('/send', async (req, res) => {
+  const { chatId, sender, text } = req.body;
+  const message = new Message({ chatId, sender, text });
+  await message.save();
+  res.json(message);
 });
 
 module.exports = router;
