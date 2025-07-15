@@ -1,31 +1,57 @@
-const express = require('express');
+// routes/auth.js
+const express = require("express");
 const router = express.Router();
-const User = require('../models/User');
+const User = require("../models/User");
+const bcrypt = require("bcryptjs");
 
-// регистрация
-router.post('/register', async (req, res) => {
-  const { username, password } = req.body;
-  if (!username.startsWith('@')) return res.status(400).json({ error: 'Юзернейм должен начинаться с @' });
-  const exists = await User.findOne({ username });
-  if (exists) return res.status(400).json({ error: 'Имя уже занято' });
-  const user = new User({ username, password });
-  await user.save();
-  res.json({ message: 'ok', userId: user._id });
+// Регистрация
+router.post("/register", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({ error: "Не все поля заполнены" });
+    }
+
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({ error: "Такой пользователь уже есть" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = new User({ username, password: hashedPassword });
+    await newUser.save();
+
+    return res.status(201).json({
+      message: "Пользователь зарегистрирован",
+      userId: newUser._id
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Ошибка сервера" });
+  }
 });
 
-// вход
-router.post('/login', async (req, res) => {
-  const { username, password } = req.body;
-  const user = await User.findOne({ username, password });
-  if (!user) return res.status(401).json({ error: 'Неверные данные' });
-  res.json({ userId: user._id, username: user.username });
-});
-
-// поиск по тегу
-router.get('/search/:tag', async (req, res) => {
-  const tag = req.params.tag;
-  const users = await User.find({ username: new RegExp(tag, 'i') }).select('username');
-  res.json(users);
+// Логин
+router.post("/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(400).json({ error: "Неверные данные" });
+    }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ error: "Неверные данные" });
+    }
+    return res.status(200).json({
+      message: "Вход выполнен",
+      userId: user._id
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Ошибка сервера" });
+  }
 });
 
 module.exports = router;
