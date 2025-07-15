@@ -3,6 +3,17 @@ const router = express.Router();
 const Chat = require('../models/Chat');
 const Message = require('../models/Message');
 
+// ✅ Сначала маршрут для сообщений чата
+router.get('/messages/:chatId', async (req, res) => {
+  try {
+    const messages = await Message.find({ chatId: req.params.chatId }).sort({ createdAt: 1 });
+    res.json(messages);
+  } catch (err) {
+    console.error('Ошибка при получении сообщений:', err);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
 // ✅ Получить список чатов пользователя
 router.get('/:userId', async (req, res) => {
   try {
@@ -29,17 +40,6 @@ router.post('/', async (req, res) => {
     res.json(chat);
   } catch (err) {
     console.error('Ошибка при создании чата:', err);
-    res.status(500).json({ error: 'Ошибка сервера' });
-  }
-});
-
-// ✅ Получить сообщения чата
-router.get('/messages/:chatId', async (req, res) => {
-  try {
-    const messages = await Message.find({ chatId: req.params.chatId }).sort({ createdAt: 1 });
-    res.json(messages);
-  } catch (err) {
-    console.error('Ошибка при получении сообщений:', err);
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
