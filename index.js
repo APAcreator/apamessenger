@@ -18,7 +18,7 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
-// ✅ Подключение к конкретной базе APAMessenger
+// ✅ Подключение к БД
 mongoose.connect(
   "mongodb+srv://creator:APAgroup.pro193@cluster0.o1azkwr.mongodb.net/APAMessenger?retryWrites=true&w=majority&tls=true",
   {
@@ -28,7 +28,7 @@ mongoose.connect(
 ).then(() => console.log("✅ MongoDB connected (APAMessenger)"))
  .catch(err => console.log("❌ MongoDB error:", err));
 
-// Socket events
+// ✅ Socket
 io.on("connection", (socket) => {
   console.log("🔌 Новый клиент подключен:", socket.id);
 
@@ -42,15 +42,18 @@ io.on("connection", (socket) => {
   });
 });
 
-// Routes
+// ✅ Роуты
 const authRoutes = require("./routes/auth");
 const messageRoutes = require("./routes/messages");
+const chatsRoutes = require("./routes/chats"); // 👈 добавил роут для чатов
 
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
+app.use("/api/chats", chatsRoutes); // 👈 теперь чаты обрабатываются тут
 
+// ✅ Проверка сервера
 app.get("/", (req, res) => {
-  res.send("APA Messenger Backend Running");
+  res.json({ status: "APA Messenger Backend Running" });
 });
 
 const PORT = process.env.PORT || 5000;
