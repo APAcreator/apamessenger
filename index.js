@@ -1,29 +1,69 @@
-const express = require('express'); 
+const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const { Server } = require('socket.io');
+const bcrypt = require('bcrypt');
+
+const User = require('./models/User');
+const Chat = require('./models/Chat');
+const Message = require('./models/Message');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: '*', methods: ['GET', 'POST', 'DELETE'], credentials: true }
+  cors: { origin: '*', methods: ['GET','POST','DELETE'], credentials: true }
 });
 
 app.use(cors());
 app.use(express.json());
 
+// --- MongoDB ---
 mongoose.connect(
   'mongodb+srv://creator:APAgroup.pro193@cluster0.o1azkwr.mongodb.net/APAMessenger?retryWrites=true&w=majority&tls=true',
   { useNewUrlParser: true, useUnifiedTopology: true }
 ).then(() => console.log('✅ MongoDB connected'))
  .catch(err => console.error('❌ MongoDB error:', err));
 
-const User = require('./models/User');
-const Chat = require('./models/Chat');
-const Message = require('./models/Message');
+// ================= АВТОРИЗАЦИЯ =================
 
-// ----------------- Пользователи -----------------
+// Регистрация
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    if (!username || !password) return res.status(400).json({ error: 'Нужны username и password' });
+
+    const existing = await User.findOne({ username });
+    if (existing) return res.status(400).json({ error: 'Такой пользователь уже есть' });
+
+    const hash = await bcrypt.hash(password, 10);
+    const user = new User({ username, password: hash });
+    await user.save();
+    res.json({ message: 'Регистрация успешна', userId: user._id });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+// Логин
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const user = await User.findOne({ username });
+    if (!user) return res.status(400).json({ error: 'Неверный логин или пароль' });
+
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) return res.status(400).json({ error: 'Неверный логин или пароль' });
+
+    res.json({ message: 'Вход успешен', userId: user._id });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+// ================= ПОИСК ПОЛЬЗОВАТЕЛЕЙ =================
 app.get('/api/users/search/:q', async (req, res) => {
   try {
     const users = await User.find({ username: { $regex: req.params.q, $options: 'i' } });
@@ -33,9 +73,9 @@ app.get('/api/users/search/:q', async (req, res) => {
   }
 });
 
-// ----------------- Чаты -----------------
+// ================= ЧАТЫ =================
 app.get('/api/chats/:userId', async (req, res) => {
-  const chats = await Chat.find({ members: req.params.userId }).populate('members', 'username');
+  const chats = await Chat.find({ members: req.params.userId }).populate('members','username');
   res.json(chats);
 });
 
@@ -66,23 +106,33 @@ app.get('/api/chats/messages/:chatId', async (req, res) => {
   res.json(messages);
 });
 
-// ----------------- Сообщения -----------------
+// ================= СООБЩЕНИЯ =================
 app.post('/api/messages/send', async (req, res) => {
   const { chatId, sender, text } = req.body;
   if (!chatId || !sender || !text) return res.status(400).json({ error: 'Недостаточно данных' });
-  const msg = new Message({ chatId, sender, text });
+
+  const msg = new Message({
+    chatId,
+    sender,
+    text,
+    createdAt: new Date()
+  });
   await msg.save();
   io.to(chatId).emit('receive_message', msg);
   res.json(msg);
 });
 
-// ----------------- Socket.IO -----------------
+// ================= SOCKET =================
 io.on('connection', (socket) => {
-  socket.on('join_chat', (chatId) => { socket.join(chatId); });
-  socket.on('send_message', (data) => { io.to(data.chatId).emit('receive_message', data); });
+  socket.on('join_chat', (chatId) => {
+    socket.join(chatId);
+  });
+  socket.on('send_message', (data) => {
+    io.to(data.chatId).emit('receive_message', data);
+  });
 });
 
-// ----------------- Защита от неверных маршрутов -----------------
+// ================= ДОПОЛНИТЕЛЬНО =================
 app.get('/', (req, res) => {
   res.json({ message: 'API работает' });
 });
