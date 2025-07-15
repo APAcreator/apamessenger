@@ -1,4 +1,4 @@
-const express = require('express');
+const express = require('express'); 
 const http = require('http');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -43,7 +43,6 @@ app.post('/api/chats/create', async (req, res) => {
   const { userId, otherUserId } = req.body;
   if (!userId || !otherUserId) return res.status(400).json({ error: 'Нужны userId и otherUserId' });
 
-  // проверим, есть ли уже чат
   const existing = await Chat.findOne({ members: { $all: [userId, otherUserId] } });
   if (existing) return res.json(existing);
 
@@ -81,6 +80,15 @@ app.post('/api/messages/send', async (req, res) => {
 io.on('connection', (socket) => {
   socket.on('join_chat', (chatId) => { socket.join(chatId); });
   socket.on('send_message', (data) => { io.to(data.chatId).emit('receive_message', data); });
+});
+
+// ----------------- Защита от неверных маршрутов -----------------
+app.get('/', (req, res) => {
+  res.json({ message: 'API работает' });
+});
+
+app.use((req, res) => {
+  res.status(404).json({ error: 'Маршрут не найден' });
 });
 
 server.listen(5000, '0.0.0.0', () => console.log('🚀 Server running on port 5000'));
