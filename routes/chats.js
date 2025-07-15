@@ -15,7 +15,7 @@ router.get('/:userId', async (req, res) => {
 });
 
 // ✅ Создать чат с другим пользователем
-router.post('/create', async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { userId, otherUserId } = req.body;
     if (!userId || !otherUserId) {
