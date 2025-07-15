@@ -18,14 +18,14 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
-// MongoDB
+// ✅ Подключение к конкретной базе APAMessenger
 mongoose.connect(
-  "mongodb+srv://creator:APAgroup.pro193@cluster0.o1azkwr.mongodb.net/?retryWrites=true&w=majority&tls=true",
+  "mongodb+srv://creator:APAgroup.pro193@cluster0.o1azkwr.mongodb.net/APAMessenger?retryWrites=true&w=majority&tls=true",
   {
     useNewUrlParser: true,
     useUnifiedTopology: true
   }
-).then(() => console.log("✅ MongoDB connected"))
+).then(() => console.log("✅ MongoDB connected (APAMessenger)"))
  .catch(err => console.log("❌ MongoDB error:", err));
 
 // Socket events
